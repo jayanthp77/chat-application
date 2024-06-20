@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#000000" />
+  <meta
+    name="description"
+    content="Chat app using React, Firebase, MongoDB, Express and Socket.io"
+  />
+  <meta name="keyword" content="chat app, mern stack, socket.io, firebase">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+  <title>Let's Chat</title>
+  <style>
+    /* Add your custom styles here */
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .form {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 10px;
+    }
+
+    .input {
+      margin-bottom: 10px;
+      padding: 8px;
+      font-size: 16px;
+    }
+
+    .button {
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+
+    .button:hover {
+      background-color: #0056b3;
+    }
+
+    .messageArea {
+      border: 1px solid #ddd;
+      padding: 10px;
+      height: 300px;
+      overflow-y: scroll;
+      margin-bottom: 10px;
+    }
+
+    .message {
+      margin-bottom: 5px;
+      padding: 5px 10px;
+      border-radius: 5px;
+      background-color: #f0f0f0;
+    }
+
+    .username {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div id="root">
+    <!-- This div will be used by React to render the main application -->
+  </div>
+  <div class="container">
+    <h1 class="logo">Let's Chat</h1>
+    <form class="form" id="form">
+      <input class="input" type="text" placeholder="Name" id="myname">
+      <input class="input" type="text" placeholder="Message" id="message">
+      <button class="button">Send Message</button>
+    </form>
+    <div class="messageArea" id="messageArea"></div>
+  </div>
+
+  <!-- Socket.io script -->
+  <script src="/socket.io/socket.io.js"></script>
+
+  <!-- React and ReactDOM scripts (you may replace with local paths if available) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.production.min.js"></script>
+
+  <!-- Your React component script -->
+  <script>
+    // React component for the main application
+    function App() {
+      // React state to manage messages
+      const [messages, setMessages] = React.useState([]);
+
+      // Socket.io connection
+      const socket = io();
+
+      // Function to handle form submission
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        const name = document.getElementById('myname').value;
+        const message = document.getElementById('message').value;
+
+        if (message.trim()) {
+          socket.emit('send name', name);
+          socket.emit('send message', message);
+          document.getElementById('message').value = '';
+        }
+      };
+
+      // Effect to listen for incoming messages
+      React.useEffect(() => {
+        socket.on('send name', (username) => {
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            { type: 'name', content: username }
+          ]);
+        });
+
+        socket.on('send message', (chat) => {
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            { type: 'message', content: chat }
+          ]);
+        });
+
+        return () => socket.disconnect();
+      }, []);
+
+      // JSX for rendering messages
+      const messageList = messages.map((msg, index) => {
+        if (msg.type === 'name') {
+          return (
+            <p key={index} className="message">
+              <span className="username">{msg.content}:</span>
+            </p>
+          );
+        } else if (msg.type === 'message') {
+          return (
+            <p key={index} className="message">
+              {msg.content}
+            </p>
+          );
+        }
+        return null;
+      });
+
+      return (
+        <>
+          <form className="form" id="form" onSubmit={handleSubmit}>
+            <input className="input" type="text" placeholder="Name" id="myname" />
+            <input className="input" type="text" placeholder="Message" id="message" />
+            <button className="button">Send Message</button>
+          </form>
+          <div className="messageArea" id="messageArea">
+            {messageList}
+          </div>
+        </>
+      );
+    }
+
+    // Render the React component
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
